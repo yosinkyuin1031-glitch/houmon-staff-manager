@@ -75,6 +75,37 @@ export default function ScheduleTab() {
     setSelectedDate(d.toISOString().split('T')[0])
   }
 
+  // 訪問施術料カテゴリ自動計算（同一スタッフ・同一日・同一施設）
+  const visitFeeCategory = useMemo(() => {
+    const categoryMap: Record<string, number> = {}
+    // スタッフ×施設住所でグループ化
+    const groups: Record<string, string[]> = {}
+    for (const v of visits) {
+      const addr = v.patient?.address || `個別_${v.patient_id}`
+      const key = `${v.staff_id}_${addr}`
+      if (!groups[key]) groups[key] = []
+      groups[key].push(v.id)
+    }
+    // 各グループ内で時間順にソートして①②③を割当
+    for (const ids of Object.values(groups)) {
+      const sorted = ids.sort((a, b) => {
+        const va = visits.find(v => v.id === a)
+        const vb = visits.find(v => v.id === b)
+        return (va?.start_time || '').localeCompare(vb?.start_time || '')
+      })
+      sorted.forEach((id, i) => {
+        categoryMap[id] = Math.min(i + 1, 3) // 1=①, 2=②, 3+=③
+      })
+    }
+    return categoryMap
+  }, [visits])
+
+  const FEE_LABELS: Record<number, { label: string; color: string }> = {
+    1: { label: '①', color: 'bg-blue-100 text-blue-700' },
+    2: { label: '②', color: 'bg-yellow-100 text-yellow-700' },
+    3: { label: '③', color: 'bg-gray-100 text-gray-600' },
+  }
+
   // スタッフ別にグループ化
   const groupedByStaff = useMemo(() => {
     const groups: Record<string, { staff: Staff; visits: (Visit & { patient: Patient })[] }> = {}
@@ -177,15 +208,33 @@ export default function ScheduleTab() {
       ) : (
         groupedByStaff.map(({ staff, visits: sv }) => (
           <div key={staff.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="bg-teal-50 px-4 py-2 flex items-center justify-between">
-              <h3 className="font-bold text-teal-800 text-sm">
-                {staff.name}
-                <span className="text-xs font-normal text-teal-600 ml-1">（{sv.length}件）</span>
-              </h3>
+            <div className="bg-teal-50 px-4 py-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-teal-800 text-sm">
+                  {staff.name}
+                  <span className="text-xs font-normal text-teal-600 ml-1">（{sv.length}件）</span>
+                </h3>
+                <div className="flex gap-1 text-xs">
+                  <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">
+                    ①{sv.filter(v => visitFeeCategory[v.id] === 1).length}
+                  </span>
+                  {sv.some(v => visitFeeCategory[v.id] === 2) && (
+                    <span className="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-bold">
+                      ②{sv.filter(v => visitFeeCategory[v.id] === 2).length}
+                    </span>
+                  )}
+                  {sv.some(v => visitFeeCategory[v.id] === 3) && (
+                    <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-bold">
+                      ③{sv.filter(v => visitFeeCategory[v.id] === 3).length}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="divide-y divide-gray-100">
               {sv.map(v => {
                 const st = VISIT_STATUSES[v.status]
+                const fee = FEE_LABELS[visitFeeCategory[v.id]] || FEE_LABELS[1]
                 return (
                   <div key={v.id} className="px-4 py-3">
                     <div className="flex items-center justify-between">
@@ -193,10 +242,14 @@ export default function ScheduleTab() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-mono text-gray-600">{v.start_time || '--:--'}</span>
                           <span className="font-medium text-sm">{v.patient?.name}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${fee.color}`}>
+                            施術料{fee.label}
+                          </span>
                           <span className={`px-1.5 py-0.5 rounded text-xs ${st.color}`}>{st.label}</span>
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {v.treatment_content && `${v.treatment_content}`}
+                          {v.patient?.address && `📍${v.patient.address}`}
+                          {v.treatment_content && ` / ${v.treatment_content}`}
                           {v.insurance_type && ` / ${v.insurance_type}`}
                           {v.notes && ` / ${v.notes}`}
                         </p>
