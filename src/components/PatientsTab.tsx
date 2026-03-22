@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { createClient, getClinicId } from '@/lib/supabase'
-import { Patient, Staff, CARE_LEVELS } from '@/lib/types'
+import { Patient, Staff, Facility, CARE_LEVELS } from '@/lib/types'
 
 export default function PatientsTab() {
   const supabase = createClient()
   const clinicId = getClinicId()
   const [patients, setPatients] = useState<Patient[]>([])
   const [staffList, setStaffList] = useState<Staff[]>([])
+  const [facilities, setFacilities] = useState<Facility[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -16,17 +17,19 @@ export default function PatientsTab() {
   const [form, setForm] = useState({
     name: '', kana: '', phone: '', care_level: '',
     insurance_number: '', acupuncture_condition: '', massage_condition: '',
-    assigned_staff_id: '', sales_staff_id: '',
+    facility_id: '', assigned_staff_id: '', sales_staff_id: '',
     visit_frequency: '', visit_day_preference: '', notes: '',
   })
 
   const load = async () => {
-    const [pRes, sRes] = await Promise.all([
+    const [pRes, sRes, fRes] = await Promise.all([
       supabase.from('houmon_patients').select('*').eq('clinic_id', clinicId).eq('is_active', true).order('kana'),
       supabase.from('houmon_staff').select('*').eq('clinic_id', clinicId).eq('is_active', true).order('name'),
+      supabase.from('houmon_facilities').select('*').eq('clinic_id', clinicId).eq('is_active', true).order('name'),
     ])
     setPatients(pRes.data || [])
     setStaffList(sRes.data || [])
+    setFacilities(fRes.data || [])
     setLoading(false)
   }
 
@@ -36,7 +39,7 @@ export default function PatientsTab() {
     setForm({
       name: '', kana: '', phone: '', care_level: '',
       insurance_number: '', acupuncture_condition: '', massage_condition: '',
-      assigned_staff_id: '', sales_staff_id: '',
+      facility_id: '', assigned_staff_id: '', sales_staff_id: '',
       visit_frequency: '', visit_day_preference: '', notes: '',
     })
     setEditing(null)
@@ -48,6 +51,7 @@ export default function PatientsTab() {
     const data = {
       ...form,
       clinic_id: clinicId,
+      facility_id: form.facility_id || null,
       assigned_staff_id: form.assigned_staff_id || null,
       sales_staff_id: form.sales_staff_id || null,
     }
@@ -66,6 +70,7 @@ export default function PatientsTab() {
       care_level: p.care_level, insurance_number: p.insurance_number,
       acupuncture_condition: p.acupuncture_condition || '',
       massage_condition: p.massage_condition || '',
+      facility_id: p.facility_id || '',
       assigned_staff_id: p.assigned_staff_id || '',
       sales_staff_id: p.sales_staff_id || '',
       visit_frequency: p.visit_frequency, visit_day_preference: p.visit_day_preference,
@@ -83,6 +88,9 @@ export default function PatientsTab() {
 
   const getStaffName = (id: string | null) =>
     staffList.find(s => s.id === id)?.name || '未割当'
+
+  const getFacilityName = (id: string | null) =>
+    facilities.find(f => f.id === id)?.name || ''
 
   const filtered = patients.filter(p =>
     !search || p.name.includes(search) || p.kana.includes(search)
@@ -124,6 +132,11 @@ export default function PatientsTab() {
               {CARE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
+          <select value={form.facility_id} onChange={e => setForm({ ...form, facility_id: e.target.value })}
+            className="w-full px-3 py-2 border rounded-lg text-sm">
+            <option value="">施設を選択</option>
+            {facilities.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+          </select>
           <input value={form.insurance_number} onChange={e => setForm({ ...form, insurance_number: e.target.value })}
             placeholder="保険証番号" className="w-full px-3 py-2 border rounded-lg text-sm" />
           <input value={form.acupuncture_condition} onChange={e => setForm({ ...form, acupuncture_condition: e.target.value })}
@@ -171,6 +184,9 @@ export default function PatientsTab() {
                   )}
                 </div>
                 {p.kana && <p className="text-xs text-gray-400">{p.kana}</p>}
+                {p.facility_id && (
+                  <p className="text-xs text-teal-600 mt-0.5">{getFacilityName(p.facility_id)}</p>
+                )}
                 {(p.acupuncture_condition || p.massage_condition) && (
                   <p className="text-xs text-gray-500 mt-1">
                     {p.acupuncture_condition && `鍼灸: ${p.acupuncture_condition}`}

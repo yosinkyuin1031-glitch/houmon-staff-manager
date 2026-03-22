@@ -5,6 +5,7 @@ import { TabType } from '@/lib/types'
 import HomeTab from '@/components/HomeTab'
 import ScheduleTab from '@/components/ScheduleTab'
 import StaffTab from '@/components/StaffTab'
+import FacilitiesTab from '@/components/FacilitiesTab'
 import PatientsTab from '@/components/PatientsTab'
 import ReportTab from '@/components/ReportTab'
 
@@ -12,6 +13,7 @@ const TABS: { id: TabType; label: string; icon: string }[] = [
   { id: 'home', label: 'ホーム', icon: '🏠' },
   { id: 'schedule', label: 'スケジュール', icon: '📅' },
   { id: 'staff', label: 'スタッフ', icon: '👤' },
+  { id: 'facilities', label: '施設', icon: '🏢' },
   { id: 'patients', label: '患者', icon: '🏥' },
   { id: 'report', label: 'レポート', icon: '📊' },
 ]
@@ -31,6 +33,7 @@ export default function Home() {
         {tab === 'home' && <HomeTab />}
         {tab === 'schedule' && <ScheduleTab />}
         {tab === 'staff' && <StaffTab />}
+        {tab === 'facilities' && <FacilitiesTab />}
         {tab === 'patients' && <PatientsTab />}
         {tab === 'report' && <ReportTab />}
       </main>

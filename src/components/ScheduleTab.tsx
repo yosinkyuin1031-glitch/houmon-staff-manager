@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient, getClinicId } from '@/lib/supabase'
-import { Visit, Staff, Patient, VISIT_STATUSES } from '@/lib/types'
+import { Visit, Staff, Patient, Facility, VISIT_STATUSES } from '@/lib/types'
 
 export default function ScheduleTab() {
   const supabase = createClient()
@@ -11,6 +11,7 @@ export default function ScheduleTab() {
   const [visits, setVisits] = useState<(Visit & { staff: Staff; patient: Patient })[]>([])
   const [staffList, setStaffList] = useState<Staff[]>([])
   const [patients, setPatients] = useState<Patient[]>([])
+  const [facilityList, setFacilityList] = useState<Facility[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
@@ -21,7 +22,7 @@ export default function ScheduleTab() {
   const TREATMENT_OPTIONS = ['鍼灸', 'マッサージ', '徒手矯正', '鍼灸+マッサージ', '鍼灸+徒手矯正', 'マッサージ+徒手矯正']
 
   const load = async () => {
-    const [vRes, sRes, pRes] = await Promise.all([
+    const [vRes, sRes, pRes, fRes] = await Promise.all([
       supabase
         .from('houmon_visits')
         .select('*, staff:houmon_staff(*), patient:houmon_patients(*)')
@@ -30,10 +31,12 @@ export default function ScheduleTab() {
         .order('start_time'),
       supabase.from('houmon_staff').select('*').eq('clinic_id', clinicId).eq('is_active', true).order('name'),
       supabase.from('houmon_patients').select('*').eq('clinic_id', clinicId).eq('is_active', true).order('kana'),
+      supabase.from('houmon_facilities').select('*').eq('clinic_id', clinicId).eq('is_active', true).order('name'),
     ])
     setVisits((vRes.data || []) as (Visit & { staff: Staff; patient: Patient })[])
     setStaffList(sRes.data || [])
     setPatients(pRes.data || [])
+    setFacilityList(fRes.data || [])
     setLoading(false)
   }
 
@@ -78,11 +81,11 @@ export default function ScheduleTab() {
   // 訪問施術料カテゴリ自動計算（同一スタッフ・同一日・同一施設）
   const visitFeeCategory = useMemo(() => {
     const categoryMap: Record<string, number> = {}
-    // スタッフ×施設住所でグループ化
+    // スタッフ×施設でグループ化（facility_id優先、なければaddress）
     const groups: Record<string, string[]> = {}
     for (const v of visits) {
-      const addr = v.patient?.address || `個別_${v.patient_id}`
-      const key = `${v.staff_id}_${addr}`
+      const facilityKey = v.patient?.facility_id || v.patient?.address || `個別_${v.patient_id}`
+      const key = `${v.staff_id}_${facilityKey}`
       if (!groups[key]) groups[key] = []
       groups[key].push(v.id)
     }
@@ -99,6 +102,9 @@ export default function ScheduleTab() {
     }
     return categoryMap
   }, [visits])
+
+  const getFacilityName = (fid: string | null) =>
+    facilityList.find(f => f.id === fid)?.name || ''
 
   const FEE_LABELS: Record<number, { label: string; color: string }> = {
     1: { label: '①', color: 'bg-blue-100 text-blue-700' },
@@ -162,7 +168,7 @@ export default function ScheduleTab() {
           <select value={form.patient_id} onChange={e => setForm({ ...form, patient_id: e.target.value })}
             className="w-full px-3 py-2 border rounded-lg text-sm">
             <option value="">患者を選択 *</option>
-            {patients.map(p => <option key={p.id} value={p.id}>{p.name}{p.address ? ` (${p.address})` : ''}</option>)}
+            {patients.map(p => <option key={p.id} value={p.id}>{p.name}{p.facility_id ? ` (${getFacilityName(p.facility_id)})` : ''}</option>)}
           </select>
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -248,7 +254,7 @@ export default function ScheduleTab() {
                           <span className={`px-1.5 py-0.5 rounded text-xs ${st.color}`}>{st.label}</span>
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {v.patient?.address && `📍${v.patient.address}`}
+                          {v.patient?.facility_id && `🏢${getFacilityName(v.patient.facility_id)}`}
                           {v.treatment_content && ` / ${v.treatment_content}`}
                           {v.insurance_type && ` / ${v.insurance_type}`}
                           {v.notes && ` / ${v.notes}`}

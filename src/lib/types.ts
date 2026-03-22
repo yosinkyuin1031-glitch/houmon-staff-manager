@@ -1,3 +1,16 @@
+export interface Facility {
+  id: string
+  clinic_id: string
+  name: string
+  address: string
+  phone: string
+  contact_person: string
+  notes: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface Staff {
   id: string
   clinic_id: string
@@ -26,6 +39,7 @@ export interface Patient {
   primary_condition: string
   acupuncture_condition: string
   massage_condition: string
+  facility_id: string | null
   assigned_staff_id: string | null
   sales_staff_id: string | null
   visit_frequency: string
@@ -69,7 +83,7 @@ export interface Shift {
   created_at: string
 }
 
-export type TabType = 'home' | 'schedule' | 'staff' | 'patients' | 'report'
+export type TabType = 'home' | 'schedule' | 'staff' | 'facilities' | 'patients' | 'report'
 
 export const CARE_LEVELS = [
   '要支援1', '要支援2',
