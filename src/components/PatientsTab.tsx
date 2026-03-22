@@ -14,9 +14,9 @@ export default function PatientsTab() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Patient | null>(null)
   const [form, setForm] = useState({
-    name: '', kana: '', phone: '', address: '', care_level: '',
+    name: '', kana: '', phone: '', care_level: '',
     insurance_number: '', primary_condition: '', assigned_staff_id: '',
-    visit_frequency: '', visit_day_preference: '', notes: '',
+    sales_staff_id: '', visit_frequency: '', visit_day_preference: '', notes: '',
   })
 
   const load = async () => {
@@ -33,9 +33,9 @@ export default function PatientsTab() {
 
   const resetForm = () => {
     setForm({
-      name: '', kana: '', phone: '', address: '', care_level: '',
+      name: '', kana: '', phone: '', care_level: '',
       insurance_number: '', primary_condition: '', assigned_staff_id: '',
-      visit_frequency: '', visit_day_preference: '', notes: '',
+      sales_staff_id: '', visit_frequency: '', visit_day_preference: '', notes: '',
     })
     setEditing(null)
     setShowForm(false)
@@ -47,6 +47,7 @@ export default function PatientsTab() {
       ...form,
       clinic_id: clinicId,
       assigned_staff_id: form.assigned_staff_id || null,
+      sales_staff_id: form.sales_staff_id || null,
     }
     if (editing) {
       await supabase.from('houmon_patients').update(data).eq('id', editing.id)
@@ -59,10 +60,11 @@ export default function PatientsTab() {
 
   const handleEdit = (p: Patient) => {
     setForm({
-      name: p.name, kana: p.kana, phone: p.phone, address: p.address,
+      name: p.name, kana: p.kana, phone: p.phone,
       care_level: p.care_level, insurance_number: p.insurance_number,
       primary_condition: p.primary_condition,
       assigned_staff_id: p.assigned_staff_id || '',
+      sales_staff_id: p.sales_staff_id || '',
       visit_frequency: p.visit_frequency, visit_day_preference: p.visit_day_preference,
       notes: p.notes,
     })
@@ -80,7 +82,7 @@ export default function PatientsTab() {
     staffList.find(s => s.id === id)?.name || '未割当'
 
   const filtered = patients.filter(p =>
-    !search || p.name.includes(search) || p.kana.includes(search) || p.address.includes(search)
+    !search || p.name.includes(search) || p.kana.includes(search)
   )
 
   if (loading) return <p className="text-center text-gray-400 py-8">読み込み中...</p>
@@ -97,7 +99,7 @@ export default function PatientsTab() {
 
       <input
         value={search} onChange={e => setSearch(e.target.value)}
-        placeholder="名前・住所で検索..."
+        placeholder="名前で検索..."
         className="w-full px-3 py-2 border rounded-lg text-sm"
       />
 
@@ -110,8 +112,6 @@ export default function PatientsTab() {
             <input value={form.kana} onChange={e => setForm({ ...form, kana: e.target.value })}
               placeholder="フリガナ" className="px-3 py-2 border rounded-lg text-sm" />
           </div>
-          <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })}
-            placeholder="住所" className="w-full px-3 py-2 border rounded-lg text-sm" />
           <div className="grid grid-cols-2 gap-2">
             <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
               placeholder="電話番号" className="px-3 py-2 border rounded-lg text-sm" />
@@ -129,7 +129,12 @@ export default function PatientsTab() {
           </div>
           <select value={form.assigned_staff_id} onChange={e => setForm({ ...form, assigned_staff_id: e.target.value })}
             className="w-full px-3 py-2 border rounded-lg text-sm">
-            <option value="">担当スタッフ</option>
+            <option value="">施術担当者</option>
+            {staffList.map(s => <option key={s.id} value={s.id}>{s.name}（{s.role}）</option>)}
+          </select>
+          <select value={form.sales_staff_id} onChange={e => setForm({ ...form, sales_staff_id: e.target.value })}
+            className="w-full px-3 py-2 border rounded-lg text-sm">
+            <option value="">営業担当者</option>
             {staffList.map(s => <option key={s.id} value={s.id}>{s.name}（{s.role}）</option>)}
           </select>
           <div className="grid grid-cols-2 gap-2">
@@ -163,26 +168,17 @@ export default function PatientsTab() {
                   )}
                 </div>
                 {p.kana && <p className="text-xs text-gray-400">{p.kana}</p>}
-                <p className="text-xs text-gray-500 mt-1">
-                  {p.address && `${p.address}`}
-                  {p.primary_condition && ` / ${p.primary_condition}`}
-                </p>
+                {p.primary_condition && (
+                  <p className="text-xs text-gray-500 mt-1">{p.primary_condition}</p>
+                )}
                 <p className="text-xs text-gray-400 mt-0.5">
-                  担当: {getStaffName(p.assigned_staff_id)}
+                  施術: {getStaffName(p.assigned_staff_id)}
+                  {' / '}営業: {getStaffName(p.sales_staff_id)}
                   {p.visit_frequency && ` / ${p.visit_frequency}`}
                   {p.visit_day_preference && `（${p.visit_day_preference}）`}
                 </p>
               </div>
               <div className="flex gap-1 flex-shrink-0">
-                {p.address && (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="px-2 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs"
-                  >
-                    地図
-                  </a>
-                )}
                 <button onClick={() => handleEdit(p)}
                   className="px-2 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs">編集</button>
                 <button onClick={() => handleDeactivate(p.id)}

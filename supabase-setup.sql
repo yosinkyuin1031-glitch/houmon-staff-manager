@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS houmon_patients (
   insurance_number TEXT DEFAULT '', -- 保険証番号
   primary_condition TEXT DEFAULT '', -- 主傷病名
   assigned_staff_id UUID REFERENCES houmon_staff(id),
+  sales_staff_id UUID REFERENCES houmon_staff(id), -- 営業担当者
   visit_frequency TEXT DEFAULT '', -- 週2回、月8回 etc.
   visit_day_preference TEXT DEFAULT '', -- 月水金 etc.
   is_active BOOLEAN DEFAULT true,

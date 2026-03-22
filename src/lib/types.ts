@@ -25,6 +25,7 @@ export interface Patient {
   insurance_number: string
   primary_condition: string
   assigned_staff_id: string | null
+  sales_staff_id: string | null
   visit_frequency: string
   visit_day_preference: string
   is_active: boolean
