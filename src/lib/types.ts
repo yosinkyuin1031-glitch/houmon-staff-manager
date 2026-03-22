@@ -24,6 +24,8 @@ export interface Patient {
   care_level: string
   insurance_number: string
   primary_condition: string
+  acupuncture_condition: string
+  massage_condition: string
   assigned_staff_id: string | null
   sales_staff_id: string | null
   visit_frequency: string

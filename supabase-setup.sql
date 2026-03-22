@@ -28,7 +28,9 @@ CREATE TABLE IF NOT EXISTS houmon_patients (
   address TEXT DEFAULT '',
   care_level TEXT DEFAULT '', -- 要介護度: 要支援1,2 要介護1-5
   insurance_number TEXT DEFAULT '', -- 保険証番号
-  primary_condition TEXT DEFAULT '', -- 主傷病名
+  primary_condition TEXT DEFAULT '', -- 主傷病名（旧）
+  acupuncture_condition TEXT DEFAULT '', -- 鍼灸同意書の症状名
+  massage_condition TEXT DEFAULT '', -- マッサージ同意書傷病名
   assigned_staff_id UUID REFERENCES houmon_staff(id),
   sales_staff_id UUID REFERENCES houmon_staff(id), -- 営業担当者
   visit_frequency TEXT DEFAULT '', -- 週2回、月8回 etc.

@@ -15,8 +15,10 @@ export default function ScheduleTab() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     staff_id: '', patient_id: '', start_time: '09:00', end_time: '09:30',
-    insurance_type: '医療保険', notes: '',
+    treatment_content: '' as string, insurance_type: '医療保険', notes: '',
   })
+
+  const TREATMENT_OPTIONS = ['鍼灸', 'マッサージ', '徒手矯正', '鍼灸+マッサージ', '鍼灸+徒手矯正', 'マッサージ+徒手矯正']
 
   const load = async () => {
     const [vRes, sRes, pRes] = await Promise.all([
@@ -46,12 +48,13 @@ export default function ScheduleTab() {
       visit_date: selectedDate,
       start_time: form.start_time,
       end_time: form.end_time,
+      treatment_content: form.treatment_content,
       insurance_type: form.insurance_type,
       notes: form.notes,
       status: 'scheduled',
     })
     setShowForm(false)
-    setForm({ staff_id: '', patient_id: '', start_time: '09:00', end_time: '09:30', insurance_type: '医療保険', notes: '' })
+    setForm({ staff_id: '', patient_id: '', start_time: '09:00', end_time: '09:30', treatment_content: '', insurance_type: '医療保険', notes: '' })
     load()
   }
 
@@ -144,6 +147,11 @@ export default function ScheduleTab() {
                 className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
           </div>
+          <select value={form.treatment_content} onChange={e => setForm({ ...form, treatment_content: e.target.value })}
+            className="w-full px-3 py-2 border rounded-lg text-sm">
+            <option value="">施術内容を選択</option>
+            {TREATMENT_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
           <select value={form.insurance_type} onChange={e => setForm({ ...form, insurance_type: e.target.value })}
             className="w-full px-3 py-2 border rounded-lg text-sm">
             <option value="医療保険">医療保険</option>
@@ -188,7 +196,7 @@ export default function ScheduleTab() {
                           <span className={`px-1.5 py-0.5 rounded text-xs ${st.color}`}>{st.label}</span>
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {v.patient?.address}
+                          {v.treatment_content && `${v.treatment_content}`}
                           {v.insurance_type && ` / ${v.insurance_type}`}
                           {v.notes && ` / ${v.notes}`}
                         </p>
