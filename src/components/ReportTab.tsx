@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient, getClinicId } from '@/lib/supabase'
 import { Staff } from '@/lib/types'
+import { ReportSkeleton } from '@/components/ui'
 
 interface DailyStats {
   date: string
@@ -104,18 +105,21 @@ export default function ReportTab() {
       setLoading(false)
     }
     load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period])
 
-  if (loading) return <p className="text-center text-gray-400 py-8">読み込み中...</p>
+  if (loading) return <ReportSkeleton />
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex gap-2" role="tablist" aria-label="期間選択">
         <button onClick={() => setPeriod('week')}
+          role="tab" aria-selected={period === 'week'} aria-label="直近7日間のレポート"
           className={`flex-1 py-2 rounded-lg text-sm font-medium ${period === 'week' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
           直近7日
         </button>
         <button onClick={() => setPeriod('month')}
+          role="tab" aria-selected={period === 'month'} aria-label="今月のレポート"
           className={`flex-1 py-2 rounded-lg text-sm font-medium ${period === 'month' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
           今月
         </button>

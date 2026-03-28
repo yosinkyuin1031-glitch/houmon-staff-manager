@@ -38,17 +38,19 @@ export default function Home() {
         {tab === 'report' && <ReportTab />}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20" aria-label="メインナビゲーション">
         <div className="max-w-lg mx-auto flex">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
+              aria-label={`${t.label}タブ`}
+              aria-current={tab === t.id ? 'page' : undefined}
               className={`flex-1 py-2 flex flex-col items-center gap-0.5 text-xs font-medium transition-colors ${
                 tab === t.id ? 'text-teal-600' : 'text-gray-400'
               }`}
             >
-              <span className="text-lg">{t.icon}</span>
+              <span className="text-lg" aria-hidden="true">{t.icon}</span>
               {t.label}
             </button>
           ))}

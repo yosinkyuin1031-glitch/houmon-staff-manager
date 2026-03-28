@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient, getClinicId } from '@/lib/supabase'
 import { Visit, Staff, Patient, VISIT_STATUSES } from '@/lib/types'
+import { HomeSkeleton } from '@/components/ui'
 
 export default function HomeTab() {
   const supabase = createClient()
@@ -57,9 +58,10 @@ export default function HomeTab() {
       setLoading(false)
     }
     load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  if (loading) return <p className="text-center text-gray-400 py-8">読み込み中...</p>
+  if (loading) return <HomeSkeleton />
 
   const today = new Date()
   const dateStr = `${today.getMonth() + 1}月${today.getDate()}日（${['日','月','火','水','木','金','土'][today.getDay()]}）`
